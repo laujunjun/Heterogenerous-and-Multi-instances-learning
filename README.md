@@ -71,7 +71,7 @@ MIL的核心方法
   	- 赋予 edge_index
   	- T.ToUndirected() 转换为无向图
 
-3. 数据加载
+**(3)数据加载**
   - get_dataset(df, feature_dir)：
     - 遍历 train.csv 和 val.csv，加载每个 病理图像 的特征。
   	- DataLoader 进行批量加载。
@@ -82,6 +82,7 @@ MIL的核心方法
 class HAN(torch.nn.Module):
     def __init__(self,  input_size, hidden_channels,  heads, pooling_ratio):
 ```
+
 - HANConv 进行异质图特征学习
 - TopKPooling 选择关键节点
 - global_mean_pool 聚合特征
@@ -108,7 +109,7 @@ class Attn_Net(nn.Module):
 ```
 - Attn_Net：
   - 采用 两层 MLP
-	- Tanh 进行非线性变换
+  - Tanh 进行非线性变换
 - Attn_Net_Gated：
   - 采用 门控注意力
-	- Sigmoid & Tanh 结合
+  - Sigmoid & Tanh 结合
