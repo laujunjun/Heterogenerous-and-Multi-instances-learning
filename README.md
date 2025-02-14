@@ -50,7 +50,7 @@ MIL的核心方法
 
 #### 1.2.1 图数据构建
 
-代码：get_dataset.py
+代码：```get_dataset.py```
 
 **（1）读取数据**
 - get_f(path, filename) 读取 图节点 和 边信息：
@@ -91,7 +91,7 @@ class HAN(torch.nn.Module):
 
 
 #### 1.2.3 MIL
-代码：MIL.py
+代码：```MIL.py```
 ```
 class MIL_fc(torch.nn.Module):
     def __init__(self, size_arg = "small", dropout = 0.5, n_classes = 2, top_k=1,
@@ -104,6 +104,7 @@ class MIL_fc(torch.nn.Module):
 
 
 #### 1.2.4注意力机制
+代码：```Attn.py```
 ```
 class Attn_Net(nn.Module):
 ```
