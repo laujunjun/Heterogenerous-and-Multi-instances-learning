@@ -1,6 +1,6 @@
 # Heterogenerous-and-Multi-instances-learning
 
-## 1. 异构图
+## 1. 异构图与多实例
 
 ### 1.1 简介
 
@@ -107,6 +107,8 @@ class MIL_fc(torch.nn.Module):
 代码：```Attn.py```
 ```
 class Attn_Net(nn.Module):
+
+
 ```
 - Attn_Net：
   - 采用 两层 MLP
@@ -114,3 +116,60 @@ class Attn_Net(nn.Module):
 - Attn_Net_Gated：
   - 采用 门控注意力
   - Sigmoid & Tanh 结合
+ 
+#### 1.2.5 训练&测试
+
+代码：```train_test.py```
+ 
+### 1.3 事件记录
+
+#### 1.3.1 添加早停机制&保存最佳模型参数
+
+#### 1.3.2 保存slide级特征向量
+
+需求：输出经多实例学习得到的聚合后的slide特征向量
+
+#### 1.3.3 输出预测结果
+
+### 1.4 问题与解决
+
+#### 1.4.1 预测值（preds）包含Nan
+- 问题描述：在计算AUC与ROC时，出现报错：
+  ```
+  ValueError: Input contains NaN, infinity or a value too large for dtype('float64').
+  ```
+- 检查：调试代码发现输入数据preds中包含Nan，导致AUC无法成功计算。追溯到前面，发现HAN提取的特征值有Nan存在，调试代码得到信息：
+```
+RuntimeError: CUDA error: device-side assert triggered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+../aten/src/ATen/native/cuda/Loss.cu:94: operator(): block: [0,0,0], thread: [0,0,0] Assertion `input_val >= zero && input_val <= one` failed.
+../aten/src/ATen/native/cuda/Loss.cu:94: operator(): block: [0,0,0], thread: [1,0,0] Assertion `input_val >= zero && input_val <= one` failed.
+```
+这个错误信息表明在运行反向传播（`loss.backward()`)时，CUDA设备触发了一个断言错误。具体来说，是在计算损失函数时，某个值不在预期的范围内。根据错误信息中的断言`input_val >= zero && input_val <= one`，可以推断出这个问题可能是由输入值超出预期的范围（0到1）引起的。
+
+
+编写调试代码得到结果：
+```
+# 打印logits的最小值和最大值
+print(f"Batch {data_idx}: logits min={logits[0].min()}, max={logits[0].max()}")
+
+Output:
+  ...
+  Batch 225: logits min=-1.0751718282699585, max=1.0859469175338745
+  Batch 226: logits min=-1.4965437650680542, max=1.4863533973693848
+  Batch 227: logits min=-2.001584768295288, max=2.0251810550689697
+  Batch 228: logits min=nan, max=nan
+
+Data contains NaN in batch 465, item 234
+
+NaN found in batch 465, item 234
+Batch 465 data item 234:
+[[[        nan         nan         nan ...  0.12100248  0.01658639
+   -0.11887261]]]
+
+data_id: ('Z1014682-3_M4',)Z1014682-3_M4
+```
+- 最后发现一slide的部分特征值为Nan，为保证数据完整性，使用其余特征值均值填充。
